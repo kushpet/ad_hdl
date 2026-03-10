@@ -85,7 +85,10 @@ module system_top (
 
   output          pl_spi_clk_o,
   output          pl_spi_mosi,
-  input           pl_spi_miso
+  input           pl_spi_miso,
+  
+  output          pl_led0,
+  output          pl_led1
  
   );
 
@@ -107,6 +110,15 @@ module system_top (
               gpio_status}));     //  7: 0
 
   assign gpio_i[16:14] = gpio_o[16:14];
+
+  // Use gpio_o[17], gpio_o[18] as LED's output
+  assign pl_led0   = gpio_o[17];
+  assign gpio_i[17] = 1'b0;     // not used as input
+  assign gpio_t[17] = 1'b0;     // drive as output
+  assign pl_led1   = gpio_o[18];
+  assign gpio_i[18] = 1'b0;     // not used as input
+  assign gpio_t[18] = 1'b0;     // drive as output
+
 
   system_wrapper i_system_wrapper (
     .ddr_addr (ddr_addr),

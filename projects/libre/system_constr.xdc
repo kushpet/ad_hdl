@@ -198,3 +198,11 @@ set_property PACKAGE_PIN W5 [get_ports {ddr_dqs_p[3]}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_rx/i_up_adc_common/up_adc_gpio_out_int_reg[0]/C}]
 set_false_path -from [get_pins {i_system_wrapper/system_i/axi_ad9361/inst/i_tx/i_up_dac_common/up_dac_gpio_out_int_reg[0]/C}]
 
+# PL LED0 on J20
+set_property PACKAGE_PIN J20 [get_ports pl_led0]
+set_property IOSTANDARD LVCMOS33 [get_ports pl_led0]
+
+# PL LED1 on H20
+set_property PACKAGE_PIN H20 [get_ports pl_led1]
+set_property IOSTANDARD LVCMOS33 [get_ports pl_led1]
+
