@@ -1,6 +1,6 @@
 // ***************************************************************************
 // ***************************************************************************
-// Copyright 2014 - 2017 (c) Analog Devices, Inc. All rights reserved.
+// Copyright (C) 2014-2023 Analog Devices, Inc. All rights reserved.
 //
 // In this HDL repository, there are many different and unique modules, consisting
 // of various HDL (Verilog or VHDL) components. The individual modules are
@@ -68,12 +68,10 @@ module axi_ad9963_tx #(
   output reg          dac_valid_i,
   input       [15:0]  dac_data_i,
   input               dma_valid_i,
-  output              out_valid_i,
   output              dac_enable_q,
   output reg          dac_valid_q,
   input       [15:0]  dac_data_q,
   input               dma_valid_q,
-  output              out_valid_q,
   input               dac_dunf,
 
   output              up_dac_ce,
@@ -147,7 +145,6 @@ module axi_ad9963_tx #(
     .dac_data_sync (dac_data_sync_s),
     .dac_dds_format (dac_dds_format_s),
     .dma_valid (dma_valid_i),
-    .out_data_valid (out_valid_i),
     .up_rstn (up_rstn),
     .up_clk (up_clk),
     .up_wreq (up_wreq),
@@ -181,7 +178,6 @@ module axi_ad9963_tx #(
     .dac_data_sync (dac_data_sync_s),
     .dac_dds_format (dac_dds_format_s),
     .dma_valid (dma_valid_q),
-    .out_data_valid (out_valid_q),
     .up_rstn (up_rstn),
     .up_clk (up_clk),
     .up_wreq (up_wreq),

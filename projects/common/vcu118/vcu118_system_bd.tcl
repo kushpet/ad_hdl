@@ -49,6 +49,7 @@ ad_ip_parameter sys_mb CONFIG.C_ADDR_TAG_BITS 15
 ad_ip_parameter sys_mb CONFIG.C_CACHE_BYTE_SIZE 65536
 ad_ip_parameter sys_mb CONFIG.C_DCACHE_ADDR_TAG 15
 ad_ip_parameter sys_mb CONFIG.C_DCACHE_BYTE_SIZE 65536
+ad_ip_parameter sys_mb CONFIG.C_USE_BRANCH_TARGET_CACHE 1
 
 # instance: microblaze - local memory & bus
 
@@ -133,7 +134,7 @@ ad_ip_instance axi_intc axi_intc
 ad_ip_parameter axi_intc CONFIG.C_HAS_FAST 0
 
 ad_ip_instance xlconcat sys_concat_intc
-ad_ip_parameter sys_concat_intc CONFIG.NUM_PORTS 16
+ad_ip_parameter sys_concat_intc CONFIG.NUM_PORTS 17
 
 # ddr4
 
@@ -265,6 +266,7 @@ ad_connect sys_concat_intc/In12   GND
 ad_connect sys_concat_intc/In13   GND
 ad_connect sys_concat_intc/In14   GND
 ad_connect sys_concat_intc/In15   GND
+ad_connect sys_concat_intc/In16   GND
 
 # interconnect - processor
 

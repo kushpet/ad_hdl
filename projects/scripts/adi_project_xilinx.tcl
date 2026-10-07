@@ -49,59 +49,59 @@ proc adi_project {project_name {mode 0} {parameter_list {}} } {
   set board ""
 
   # Determine the device based on the board name
-  if [regexp "_ac701$" $project_name] {
+  if [regexp "_ac701" $project_name] {
     set device "xc7a200tfbg676-2"
     set board [lindex [lsearch -all -inline [get_board_parts] *ac701*] end]
   }
-  if [regexp "_kc705$" $project_name] {
+  if [regexp "_kc705" $project_name] {
     set device "xc7k325tffg900-2"
     set board [lindex [lsearch -all -inline [get_board_parts] *kc705*] end]
   }
-  if [regexp "_vc707$" $project_name] {
+  if [regexp "_vc707" $project_name] {
     set device "xc7vx485tffg1761-2"
     set board [lindex [lsearch -all -inline [get_board_parts] *vc707*] end]
   }
-  if [regexp "_vcu118$" $project_name] {
+  if [regexp "_vcu118" $project_name] {
     set device "xcvu9p-flga2104-2L-e"
     set board [lindex [lsearch -all -inline [get_board_parts] *vcu118*] end]
   }
-  if [regexp "_vcu128$" $project_name] {
+  if [regexp "_vcu128" $project_name] {
     set device "xcvu37p-fsvh2892-2L-e"
     set board [lindex [lsearch -all -inline [get_board_parts] *vcu128:part0*] end]
   }
-  if [regexp "_kcu105$" $project_name] {
+  if [regexp "_kcu105" $project_name] {
     set device "xcku040-ffva1156-2-e"
     set board [lindex [lsearch -all -inline [get_board_parts] *kcu105*] end]
   }
-  if [regexp "_zed$" $project_name] {
+  if [regexp "_zed" $project_name] {
     set device "xc7z020clg484-1"
     set board [lindex [lsearch -all -inline [get_board_parts] *zed*] end]
   }
-  if [regexp "_coraz7s$" $project_name] {
+  if [regexp "_coraz7s" $project_name] {
     set device "xc7z007sclg400-1"
     set board "not-applicable"
   }
-  if [regexp "_microzed$" $project_name] {
+  if [regexp "_microzed" $project_name] {
     set device "xc7z010clg400-1"
     set board "not-applicable"
   }
-  if [regexp "_zc702$" $project_name] {
+  if [regexp "_zc702" $project_name] {
     set device "xc7z020clg484-1"
     set board [lindex [lsearch -all -inline [get_board_parts] *zc702*] end]
   }
-  if [regexp "_zc706$" $project_name] {
+  if [regexp "_zc706" $project_name] {
     set device "xc7z045ffg900-2"
     set board [lindex [lsearch -all -inline [get_board_parts] *zc706*] end]
   }
-  if [regexp "_mitx045$" $project_name] {
+  if [regexp "_mitx045" $project_name] {
     set device "xc7z045ffg900-2"
     set board "not-applicable"
   }
-  if [regexp "_zcu102$" $project_name] {
+  if [regexp "_zcu102" $project_name] {
     set device "xczu9eg-ffvb1156-2-e"
     set board [lindex [lsearch -all -inline [get_board_parts] *zcu102*] end]
   }
-  if [regexp "_vmk180_es1$" $project_name] {
+  if [regexp "_vmk180_es1" $project_name] {
     enable_beta_device xcvm*
     xhub::refresh_catalog [xhub::get_xstores xilinx_board_store]
     xhub::install [xhub::get_xitems xilinx.com:xilinx_board_store:vmk180_es:*] -quiet
@@ -109,17 +109,21 @@ proc adi_project {project_name {mode 0} {parameter_list {}} } {
     set device "xcvm1802-vsva2197-2MP-e-S-es1"
     set board [lindex [lsearch -all -inline [get_board_parts] *vmk180_es*] end]
   }
-  if [regexp "_vmk180$" $project_name] {
+  if [regexp "_vmk180" $project_name] {
     set device "xcvm1802-vsva2197-2MP-e-S"
     set board [lindex [lsearch -all -inline [get_board_parts] *vmk180*] end]
   }
-  if [regexp "_vck190$" $project_name] {
+  if [regexp "_vck190" $project_name] {
     set device "xcvc1902-vsva2197-2MP-e-S"
     set board [lindex [lsearch -all -inline [get_board_parts] *vck190*] end]
   }
-  if [regexp "_vc709$" $project_name] {
+  if [regexp "_vc709" $project_name] {
     set device "xc7vx690tffg1761-2"
     set board [lindex [lsearch -all -inline [get_board_parts] *vc709*] end]
+  }
+  if [regexp "_kv260" $project_name] {
+    set device "xck26-sfvc784-2LV-c"
+    set board [lindex [lsearch -all -inline [get_board_parts] *kv260*] end]
   }
 
   adi_project_create $project_name $mode $parameter_list $device $board
@@ -140,6 +144,7 @@ proc adi_project_create {project_name mode parameter_list device {board "not-app
 
   global ad_hdl_dir
   global ad_ghdl_dir
+  global ad_project_dir
   global p_board
   global p_device
   global sys_zynq
@@ -147,6 +152,12 @@ proc adi_project_create {project_name mode parameter_list device {board "not-app
   global IGNORE_VERSION_CHECK
   global ADI_USE_OOC_SYNTHESIS
   global ADI_USE_INCR_COMP
+
+  if {![info exists ::env(ADI_PROJECT_DIR)]} {
+    set actual_project_name $project_name
+  } else {
+    set actual_project_name "$::env(ADI_PROJECT_DIR)${project_name}"
+  }
 
   ## update the value of $p_device only if it was not already updated elsewhere
   if {$p_device eq "none"} {
@@ -156,6 +167,8 @@ proc adi_project_create {project_name mode parameter_list device {board "not-app
 
   if [regexp "^xc7z" $p_device] {
     set sys_zynq 1
+  } elseif [regexp "^xck26" $p_device] {
+    set sys_zynq 2
   } elseif [regexp "^xczu" $p_device]  {
     set sys_zynq 2
   } elseif [regexp "^xcv\[ecmph\]" $p_device]  {
@@ -181,29 +194,45 @@ proc adi_project_create {project_name mode parameter_list device {board "not-app
     }
   }
 
-  if {$mode == 0} {
-    set project_system_dir "./$project_name.srcs/sources_1/bd/system"
-    create_project $project_name . -part $p_device -force
+   if {[info exists ::env(ADI_MATLAB)]} {
+    set ADI_MATLAB 1
+    set actual_project_name "$ad_hdl_dir/vivado_prj"
+    if {$mode != 0} {
+        puts -nonewline "MATLAB builds do not support mode 2"
+        exit 2
+    }
   } else {
-    set project_system_dir ".srcs/sources_1/bd/system"
+    set ADI_MATLAB 0
+  }
+
+  if {$mode == 0} {
+     set project_system_dir "${actual_project_name}.srcs/sources_1/bd/system"
+     if {$ADI_MATLAB == 0} {
+       create_project ${actual_project_name} . -part $p_device -force
+     }
+  } else {
+    set project_system_dir "${actual_project_name}.srcs/sources_1/bd/system"
     create_project -in_memory -part $p_device
   }
 
   if {$mode == 1} {
-    file mkdir $project_name.data
+    file mkdir ${actual_project_name}.data
   }
 
   if {$p_board ne "not-applicable"} {
     set_property board_part $p_board [current_project]
   }
 
-  set lib_dirs $ad_hdl_dir/library
+  if {$ADI_MATLAB == 0} {
+    set lib_dirs $ad_hdl_dir/library
+  } else {
+    set lib_dirs [get_property ip_repo_paths [current_fileset]]
+     lappend lib_dirs $ad_hdl_dir/library
+  }
   if {[info exists ::env(ADI_GHDL_DIR)]} {
     if {$ad_hdl_dir ne $ad_ghdl_dir} {
       lappend lib_dirs $ad_ghdl_dir/library
     }
-  } else {
-    # puts -nonew-line "INFO: ADI_GHDL_DIR not defined.\n"
   }
 
   # Set a common IP cache for all projects
@@ -259,7 +288,7 @@ proc adi_project_create {project_name mode parameter_list device {board "not-app
   if {$mode == 0} {
     import_files -force -norecurse -fileset sources_1 $project_system_dir/hdl/system_wrapper.v
   } else {
-    write_hwdef -file "$project_name.data/$project_name.hwdef"
+    write_hwdef -file "${actual_project_name}.data/$project_name.hwdef"
   }
 
   if {$ADI_USE_INCR_COMP == 1} {
@@ -297,9 +326,22 @@ proc adi_project_files {project_name project_files} {
 #
 proc adi_project_run {project_name} {
 
+  global ad_project_dir
   global ADI_POWER_OPTIMIZATION
   global ADI_USE_OOC_SYNTHESIS
   global ADI_MAX_OOC_JOBS
+
+  if {![info exists ::env(ADI_PROJECT_DIR)]} {
+    set actual_project_name $project_name
+    set ad_project_dir ""
+  } else {
+    set actual_project_name "$::env(ADI_PROJECT_DIR)${project_name}"
+    set ad_project_dir "$::env(ADI_PROJECT_DIR)"
+  }
+  if {[info exists ::env(ADI_SKIP_SYNTHESIS)]} {
+    puts "Skipping synthesis"
+    return
+  }
 
   if {$ADI_USE_OOC_SYNTHESIS == 1} {
     launch_runs -jobs $ADI_MAX_OOC_JOBS system_*_synth_1 synth_1
@@ -308,7 +350,7 @@ proc adi_project_run {project_name} {
   }
   wait_on_run synth_1
   open_run synth_1
-  report_timing_summary -file timing_synth.log
+  report_timing_summary -file ${ad_project_dir}timing_synth.log
 
   if {![info exists ::env(ADI_NO_BITSTREAM_COMPRESSION)] && ![info exists ADI_NO_BITSTREAM_COMPRESSION]} {
     set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
@@ -324,10 +366,10 @@ proc adi_project_run {project_name} {
   launch_runs impl_1 -to_step write_bitstream
   wait_on_run impl_1
   open_run impl_1
-  report_timing_summary -warn_on_violation -file timing_impl.log
+  report_timing_summary -warn_on_violation -file ${ad_project_dir}timing_impl.log
 
   if {[info exists ::env(ADI_GENERATE_UTILIZATION)]} {
-    set csv_file resource_utilization.csv
+    set csv_file ${ad_project_dir}resource_utilization.csv
     if {[ catch {
       xilinx::designutils::report_failfast -csv -file $csv_file -transpose -no_header -ignore_pr -quiet
       set MMCM [llength [get_cells -hierarchical -filter { PRIMITIVE_TYPE =~ *MMCM* }]]
@@ -365,7 +407,7 @@ proc adi_project_run {project_name} {
       }
 
       foreach IP_name $IP_list {
-	set output_file ${IP_name}_resource_utilization.log
+	set output_file ${ad_project_dir}${IP_name}_resource_utilization.log
         file delete $output_file
         foreach IP_instance [ get_cells -quiet -hierarchical -filter " ORIG_REF_NAME =~ $IP_name || REF_NAME =~ $IP_name " ] {
           report_utilization -hierarchical -hierarchical_depth 1 -cells $IP_instance -file $output_file -append -quiet
@@ -379,8 +421,64 @@ proc adi_project_run {project_name} {
     puts "GENERATE_REPORTS: Resource utilization files won't be generated because ADI_GENERATE_UTILIZATION env var is not set"
   }
 
+  ## Extract IP ports and their properties
+
+  if {[info exists ::env(ADI_EXTRACT_PORTS)]} {
+
+    set p_output_file ports_properties.txt
+
+    # Define a list of IPs for which to generate the ports properties and nets report
+    set P_IP_list {
+      util_wfifo
+      util_rfifo
+      util_cpack2
+      util_upack2
+      ad_ip_jesd204_tpl_adc
+      ad_ip_jesd204_tpl_dac
+      rx_fir_decimator
+      tx_fir_interpolator
+      axi_ad9361
+      axi_adrv9009
+    }
+
+    set fileWrite [open $p_output_file w]
+
+    foreach P_IP_name $P_IP_list {
+      foreach P_IP_instance [ get_cells -quiet -hierarchical -filter " ORIG_REF_NAME =~ $P_IP_name || REF_NAME =~ $P_IP_name " ] {
+        set P_IP_instance_name [regsub -all {i_system_wrapper\/system_i\/} $P_IP_instance {}]
+	if { [regexp {adc_tpl_core} $P_IP_instance_name] } {
+            set P_IP_INST  [regsub -all {\/adc_tpl_core/inst} $P_IP_instance_name {}]
+            puts "$P_IP_INST\n"
+        } elseif { [regexp {dac_tpl_core} $P_IP_instance_name] } {
+            set P_IP_INST  [regsub -all {\/dac_tpl_core/inst} $P_IP_instance_name {}]
+            puts "$P_IP_INST\n"
+        } else {
+            set P_IP_INST  [regsub -all {\/inst} $P_IP_instance_name {}]
+            puts "$P_IP_INST\n"
+        }
+        puts $fileWrite "\n$P_IP_INST properties: \n"
+        set list_of_IP_ports [ get_bd_pins -of_objects [get_bd_cells $P_IP_INST]]
+        foreach IP_port $list_of_IP_ports {
+          set pin_direction [get_property DIR [get_bd_pins $IP_port]]
+          set pin_path [get_property PATH [get_bd_pins $IP_port]]
+          set pin_path_name  [regsub {\/} $pin_path {}]
+          set left [get_property LEFT [get_bd_pins $IP_port]]
+          set right [get_property RIGHT [get_bd_pins $IP_port]]
+          puts $fileWrite "direction $pin_direction \nMSB $left \nLSB $right \nname $pin_path_name"
+          set net_info [get_bd_nets -of_objects [get_bd_pins $IP_port]]
+          set net_name  [regsub -all {\/} $net_info {}]
+          puts $fileWrite "net $net_name\n"
+        }
+      }
+    }
+    close $fileWrite
+
+  } else {
+  puts "GENERATE_PORTS_REPORTS: IP ports properties and nets report files won't be generated because ADI_EXTRACT_PORTS env var is not set"
+  }
+
   if {[info exists ::env(ADI_GENERATE_XPA)]} {
-    set csv_file power_analysis.csv
+    set csv_file ${ad_project_dir}power_analysis.csv
     set Layers "8to11"
     set CapLoad "20"
     set ToggleRate "15.00000"
@@ -429,7 +527,7 @@ proc adi_project_run {project_name} {
     if {[info exist num_regs]} {
       if {$num_regs > 0} {
         puts "CRITICAL WARNING: There are $num_regs registers with no clocks !!! See no_clock.log for details."
-        check_timing -override_defaults no_clock -verbose -file no_clock.log
+        check_timing -override_defaults no_clock -verbose -file ${ad_project_dir}no_clock.log
       }
     }
 
@@ -437,15 +535,15 @@ proc adi_project_run {project_name} {
     puts "CRITICAL WARNING: The search for undefined clocks failed !!!"
   }
 
-  file mkdir $project_name.sdk
+  file mkdir ${actual_project_name}.sdk
 
   set timing_string $[report_timing_summary -return_string]
   if { [string match "*VIOLATED*" $timing_string] == 1 ||
        [string match "*Timing constraints are not met*" $timing_string] == 1} {
-    write_hw_platform -fixed -force  -include_bit -file $project_name.sdk/system_top_bad_timing.xsa
+    write_hw_platform -fixed -force  -include_bit -file ${actual_project_name}.sdk/system_top_bad_timing.xsa
     return -code error [format "ERROR: Timing Constraints NOT met!"]
   } else {
-    write_hw_platform -fixed -force  -include_bit -file $project_name.sdk/system_top.xsa
+    write_hw_platform -fixed -force  -include_bit -file ${actual_project_name}.sdk/system_top.xsa
   }
 }
 
@@ -459,8 +557,15 @@ proc adi_project_run {project_name} {
 proc adi_project_synth {project_name prcfg_name hdl_files {xdc_files ""}} {
 
   global p_device
+  global ad_project_dir
 
-  set p_prefix "$project_name.data/$project_name"
+  if {![info exists ::env(ADI_PROJECT_DIR)]} {
+    set actual_project_name $project_name
+  } else {
+    set actual_project_name "$::env(ADI_PROJECT_DIR)${project_name}"
+  }
+
+  set p_prefix "${actual_project_name}.data/$project_name"
 
   if {$prcfg_name eq ""} {
 
@@ -495,8 +600,15 @@ proc adi_project_impl {project_name prcfg_name {xdc_files ""}} {
   global p_prcfg_init
   global p_prcfg_list
   global p_prcfg_status
+  global ad_project_dir
 
-  set p_prefix "$project_name.data/$project_name"
+  if {![info exists ::env(ADI_PROJECT_DIR)]} {
+    set actual_project_name $project_name
+  } else {
+    set actual_project_name "$::env(ADI_PROJECT_DIR)${project_name}"
+  }
+
+  set p_prefix "${actual_project_name}.data/$project_name"
 
   if {$prcfg_name eq "default"} {
     set p_prcfg_status 0
@@ -566,7 +678,7 @@ proc adi_project_verify {project_name} {
   global p_prcfg_list
   global p_prcfg_status
 
-  set p_prefix "$project_name.data/$project_name"
+  set p_prefix "${actual_project_name}.data/$project_name"
 
   pr_verify -full_check -initial $p_prcfg_init \
     -additional $p_prcfg_list \

@@ -1,6 +1,6 @@
 // ***************************************************************************
 // ***************************************************************************
-// Copyright 2014 - 2020 (c) Analog Devices, Inc. All rights reserved.
+// Copyright (C) 2014-2023 Analog Devices, Inc. All rights reserved.
 //
 // In this HDL repository, there are many different and unique modules, consisting
 // of various HDL (Verilog or VHDL) components. The individual modules are
@@ -108,7 +108,6 @@ module adrv9001_tx #(
     .rst (dac_rst|ssi_rst),
     .clk (dac_fast_clk),
     .div_clk (dac_clk_div),
-    .loaden (1'b0),
     .data_oe (tx_output_enable),
     .data_s0 (data_s0),
     .data_s1 (data_s1),

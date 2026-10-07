@@ -1,6 +1,6 @@
 // ***************************************************************************
 // ***************************************************************************
-// Copyright 2021 (c) Analog Devices, Inc. All rights reserved.
+// Copyright (C) 2021-2023 Analog Devices, Inc. All rights reserved.
 //
 // In this HDL repository, there are many different and unique modules, consisting
 // of various HDL (Verilog or VHDL) components. The individual modules are
@@ -98,7 +98,6 @@ module axi_ad9783_if #(
     .rst (dac_rst),
     .clk (dac_clk_s),
     .div_clk (dac_div_clk),
-    .loaden (1'b0),
     .data_oe (1'b1),
     .data_s0 (dac_data_a0),
     .data_s1 (dac_data_b0),
@@ -123,7 +122,6 @@ module axi_ad9783_if #(
     .rst (dac_rst),
     .clk (dac_clk_s),
     .div_clk (dac_div_clk),
-    .loaden (1'b0),
     .data_oe (1'b1),
     .data_s0 (1'b1),
     .data_s1 (1'b0),
