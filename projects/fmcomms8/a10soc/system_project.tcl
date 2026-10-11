@@ -1,3 +1,8 @@
+###############################################################################
+## Copyright (C) 2020-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
+
 source ../../../scripts/adi_env.tcl
 source ../../scripts/adi_project_intel.tcl
 
@@ -220,7 +225,7 @@ set_instance_assignment -name IO_STANDARD "1.8 V" -to adrv9009_gpio_07_d
 set_instance_assignment -name IO_STANDARD "1.8 V" -to adrv9009_gpio_08_d
 
 # set optimization to get a better timing closure
-set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT WITH MAXIMUM PLACEMENT EFFORT"
 set_global_assignment -name PLACEMENT_EFFORT_MULTIPLIER 1.2
 
 execute_flow -compile

@@ -1,5 +1,9 @@
-# ad77684
+###############################################################################
+## Copyright (C) 2023-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
+# ad77684
 add_instance axi_ad77684_adc axi_ad7768
 set_instance_parameter_value axi_ad77684_adc {NUM_CHANNELS} {4}
 add_interface if_clk_in_bd                         conduit end
@@ -40,7 +44,7 @@ set_instance_parameter_value cn0579_dma {DMA_TYPE_SRC} {2}
 
 add_connection axi_ad77684_adc.if_adc_clk                 cn0579_dma.if_fifo_wr_clk
 add_connection cn0579_adc_pack.if_packed_fifo_wr_en       cn0579_dma.if_fifo_wr_en
-add_connection cn0579_adc_pack.if_packed_fifo_wr_sync     cn0579_dma.if_fifo_wr_sync
+add_connection cn0579_adc_pack.if_packed_sync             cn0579_dma.if_sync
 add_connection cn0579_adc_pack.if_packed_fifo_wr_data     cn0579_dma.if_fifo_wr_din
 add_connection cn0579_adc_pack.if_packed_fifo_wr_overflow cn0579_dma.if_fifo_wr_overflow
 

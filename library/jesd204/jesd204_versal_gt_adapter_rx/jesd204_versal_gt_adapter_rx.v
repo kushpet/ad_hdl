@@ -1,96 +1,117 @@
-//
-// The ADI JESD204 Core is released under the following license, which is
-// different than all other HDL cores in this repository.
-//
-// Please read this, and understand the freedoms and responsibilities you have
-// by using this source code/core.
-//
-// The JESD204 HDL, is copyright © 2016-2017 Analog Devices Inc.
-//
-// This core is free software, you can use run, copy, study, change, ask
-// questions about and improve this core. Distribution of source, or resulting
-// binaries (including those inside an FPGA or ASIC) require you to release the
-// source of the entire project (excluding the system libraries provide by the
-// tools/compiler/FPGA vendor). These are the terms of the GNU General Public
-// License version 2 as published by the Free Software Foundation.
-//
-// This core  is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-// A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License version 2
-// along with this source code, and binary.  If not, see
-// <http://www.gnu.org/licenses/>.
-//
-// Commercial licenses (with commercial support) of this JESD204 core are also
-// available under terms different than the General Public License. (e.g. they
-// do not require you to accompany any image (FPGA or ASIC) using the JESD204
-// core with any corresponding source code.) For these alternate terms you must
-// purchase a license from Analog Devices Technology Licensing Office. Users
-// interested in such a license should contact jesd204-licensing@analog.com for
-// more information. This commercial license is sub-licensable (if you purchase
-// chips from Analog Devices, incorporate them into your PCB level product, and
-// purchase a JESD204 license, end users of your product will also have a
-// license to use this core in a commercial setting without releasing their
-// source code).
-//
-// In addition, we kindly ask you to acknowledge ADI in any program, application
-// or publication in which you use this JESD204 HDL core. (You are not required
-// to do so; it is up to your common sense to decide whether you want to comply
-// with this request or not.) For general publications, we suggest referencing :
-// “The design and implementation of the JESD204 HDL Core used in this project
-// is copyright © 2016-2017, Analog Devices, Inc.”
-//
+// ***************************************************************************
+// ***************************************************************************
+// Copyright (C) 2017, 2018, 2020-2022, 2024 Analog Devices, Inc. All rights reserved.
+// SPDX short identifier: ADIJESD204
+// ***************************************************************************
+// ***************************************************************************
 
 `timescale 1ns/100ps
 
-module  jesd204_versal_gt_adapter_rx (
+module  jesd204_versal_gt_adapter_rx #(
+  parameter LINK_MODE = 2 // 1 - 8B10B, 2 - 64B66B
+) (
+  // Interface to Physical Layer
   input  [127 : 0] rxdata,
-  input    [5 : 0] rxheader,
+  input  [  5 : 0] rxheader,
+  input  [ 15 : 0] rxctrl0,
+  input  [ 15 : 0] rxctrl1,
+  input  [  7 : 0] rxctrl2,
+  input  [  7 : 0] rxctrl3,
   output           rxgearboxslip,
-  input    [1 : 0] rxheadervalid,
+  input  [  1 : 0] rxheadervalid,
+  output           rxslide,
 
   // Interface to Link layer core
-  output  [63:0]  rx_data,
-  output   [1:0]  rx_header,
-  output          rx_block_sync,
+  output [ 63 : 0]  rx_data,
+  output [  3 : 0]  rx_charisk,
+  output [  3 : 0]  rx_disperr,
+  output [  3 : 0]  rx_notintable,
+  output [  1 : 0]  rx_header,
+  output            rx_block_sync,
+  input             en_char_align,
 
-  input           usr_clk
+  input             usr_clk
 );
 
-  // Sync header alignment
-  wire rx_bitslip_req_s;
-  reg [4:0] rx_bitslip_done_cnt = 'h0;
+  reg [63:0] rxdata_d;
+  reg [ 1:0] rxheader_d;
+  reg        rxgearboxslip_d;
+  reg [ 1:0] rxheadervalid_d;
+  reg [15:0] rxctrl0_d;
+  reg [15:0] rxctrl1_d;
+  reg [ 7:0] rxctrl3_d;
+  wire       rxgearboxslip_s;
+
   always @(posedge usr_clk) begin
-    if (rx_bitslip_done_cnt[4]) begin
-      rx_bitslip_done_cnt <= 'b0;
-    end else if (rx_bitslip_req_s & ~rx_bitslip_done_cnt[4]) begin
-      rx_bitslip_done_cnt <= rx_bitslip_done_cnt + 1;
+    rxdata_d <= rxdata[63:0];
+    rxheader_d <= rxheader[1:0];
+    rxgearboxslip_d <= rxgearboxslip_s;
+    rxheadervalid_d <= rxheadervalid;
+    rxctrl0_d <= rxctrl0;
+    rxctrl1_d <= rxctrl1;
+    rxctrl3_d <= rxctrl3;
+  end
+
+  generate if (LINK_MODE == 2) begin
+    // Sync header alignment
+    wire rx_bitslip_req_s;
+    reg [5:0] rx_bitslip_done_cnt = 'h0;
+    always @(posedge usr_clk) begin
+      if (rx_bitslip_done_cnt[5]) begin
+        rx_bitslip_done_cnt <= 'b0;
+      end else if (rx_bitslip_req_s & ~rx_bitslip_done_cnt[5]) begin
+        rx_bitslip_done_cnt <= rx_bitslip_done_cnt + 1;
+      end
     end
-  end
 
-  reg rx_bitslip_req_s_d = 1'b0;
-  always @(posedge usr_clk) begin
-     rx_bitslip_req_s_d <= rx_bitslip_req_s;
-  end
-  assign rxgearboxslip = rx_bitslip_req_s & ~rx_bitslip_req_s_d;
+    reg rx_bitslip_req_s_d = 1'b0;
+    always @(posedge usr_clk) begin
+      rx_bitslip_req_s_d <= rx_bitslip_req_s;
+    end
 
-  wire [63:0] rxdata_flip;
-  genvar i;
-  for (i = 0; i < 64; i=i+1) begin
-    assign rxdata_flip[63-i] = rxdata[i];
-  end
+    assign rxgearboxslip_s = rx_bitslip_req_s & ~rx_bitslip_req_s_d;
+    assign rxgearboxslip = rxgearboxslip_d;
 
-  // Sync header alignment
-  sync_header_align i_sync_header_align (
-    .clk(usr_clk),
-    .reset(~rxheadervalid[0]),
-    // Flip header bits and data
-    .i_data({rxheader[0],rxheader[1],rxdata_flip[63:0]}),
-    .i_slip(rx_bitslip_req_s),
-    .i_slip_done(rx_bitslip_done_cnt[4]),
-    .o_data(rx_data),
-    .o_header(rx_header),
-    .o_block_sync(rx_block_sync));
+    wire [63:0] rxdata_flip;
+    wire [ 1:0] rxheader_flip;
+    genvar i;
+    for (i = 0; i < 64; i=i+1) begin
+      assign rxdata_flip[63-i] = rxdata_d[i];
+    end
+    assign rxheader_flip = {rxheader_d[0], rxheader_d[1]};
+
+    // Sync header alignment
+    sync_header_align i_sync_header_align (
+      .clk(usr_clk),
+      .reset(~rxheadervalid_d[0]),
+      // Flip header bits and data
+      .i_data({rxheader_flip, rxdata_flip}),
+      .i_slip(rx_bitslip_req_s),
+      .i_slip_done(rx_bitslip_done_cnt[5]),
+      .o_data(rx_data),
+      .o_header(rx_header),
+      .o_block_sync(rx_block_sync));
+
+      assign rx_disperr    = 4'b0;
+      assign rx_charisk    = 4'b0;
+      assign rx_notintable = 4'b0;
+      assign rxslide       = 1'b0;
+    end else begin
+      assign rx_data       = {32'b0, rxdata_d[31:0]};
+      assign rx_header     = rxheader_d[1:0];
+
+      assign rx_charisk    = rxctrl0_d[3:0];
+      assign rx_disperr    = rxctrl1_d[3:0];
+      assign rx_notintable = rxctrl3_d[3:0];
+      assign rx_block_sync = 1'b0;
+      assign rxgearboxslip = 1'b0;
+
+      lane_align i_lane_align (
+        .usr_clk  (usr_clk),
+        .rxdata   (rxdata_d[31:0]),
+        .rx_slide (rxslide),
+        .en_char_align (en_char_align));
+    end
+  endgenerate
 
 endmodule

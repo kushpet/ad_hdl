@@ -26,7 +26,7 @@
 //
 //   2. An ADI specific BSD license, which can be found in the top level directory
 //      of this repository (LICENSE_ADIBSD), and also on-line at:
-//      https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_ADIBSD
+//      https://github.com/analogdevicesinc/hdl/blob/main/LICENSE_ADIBSD
 //      This will allow to generate bit files and not release the source code,
 //      as long as it attaches to an ADI device.
 //
@@ -140,9 +140,14 @@ module axi_adrv9001_tx #(
 
   end else begin : core_enabled
 
+    // This bit lets the sw know that this feature is available
+    localparam  SELECTABLE_CLK = 1;
+
     // configuration settings
 
-    localparam  CONFIG =  (USE_RX_CLK_FOR_TX * 1024) +
+    localparam  CONFIG =  (SELECTABLE_CLK * 16384) +
+                          (USE_RX_CLK_FOR_TX[1] * 2048) +
+                          (USE_RX_CLK_FOR_TX[0] * 1024) +
                           (CMOS_LVDS_N * 128) +
                           (MODE_R1 * 16) +
                           (DDS_DISABLE * 64) +
@@ -384,6 +389,10 @@ module axi_adrv9001_tx #(
       .dac_ext_sync_arm (dac_ext_sync_arm),
       .dac_frame (),
       .dac_clksel (),
+      .dac_custom_wr(),
+      .dac_custom_rd(32'b0),
+      .dac_custom_control(),
+      .dac_status_if_busy(1'b0),
       .dac_par_type (),
       .dac_par_enb (),
       .dac_r1_mode (),

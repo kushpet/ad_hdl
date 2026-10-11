@@ -1,5 +1,9 @@
-# ip
+###############################################################################
+## Copyright (C) 2017-2023 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
+# ip
 source ../../scripts/adi_env.tcl
 source $ad_hdl_dir/library/scripts/adi_ip_xilinx.tcl
 
@@ -10,7 +14,6 @@ adi_ip_files axi_dac_interpolate [list \
   "$ad_hdl_dir/library/common/ad_iqcor.v" \
   "$ad_hdl_dir/library/xilinx/common/ad_mul.v" \
   "$ad_hdl_dir/library/xilinx/common/up_xfer_cntrl_constr.xdc" \
-  "axi_dac_interpolate_constr.xdc" \
   "cic_interp.v" \
   "fir_interp.v" \
   "axi_dac_interpolate_reg.v" \

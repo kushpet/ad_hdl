@@ -1,4 +1,7 @@
-
+###############################################################################
+## Copyright (C) 2014-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
 package require qsys 14.0
 source ../../scripts/adi_env.tcl
@@ -17,6 +20,7 @@ set_module_property VALIDATION_CALLBACK axi_dmac_validate
 ad_ip_files axi_dmac [list \
   $ad_hdl_dir/library/util_cdc/sync_bits.v \
   $ad_hdl_dir/library/util_cdc/sync_event.v \
+  $ad_hdl_dir/library/util_cdc/sync_gray.v \
   $ad_hdl_dir/library/common/up_axi.v \
   $ad_hdl_dir/library/util_axis_fifo/util_axis_fifo.v \
   $ad_hdl_dir/library/util_axis_fifo/util_axis_fifo_address_generator.v \
@@ -38,6 +42,7 @@ ad_ip_files axi_dmac [list \
   response_handler.v \
   axi_register_slice.v \
   dmac_2d_transfer.v \
+  dmac_sg.v \
   dest_axi_mm.v \
   dest_axi_stream.v \
   dest_fifo_inf.v \
@@ -87,6 +92,46 @@ set_parameter_property DMA_AXI_ADDR_WIDTH HDL_PARAMETER true
 set_parameter_property DMA_AXI_ADDR_WIDTH ALLOWED_RANGES {16:64}
 set_parameter_property DMA_AXI_ADDR_WIDTH GROUP $group
 
+add_parameter AXI_AXCACHE_AUTO BOOLEAN 1
+set_parameter_property AXI_AXCACHE_AUTO DISPLAY_NAME "ARCACHE/AWCACHE Automatically Set"
+set_parameter_property AXI_AXCACHE_AUTO HDL_PARAMETER false
+set_parameter_property AXI_AXCACHE_AUTO GROUP $group
+
+add_parameter AXI_AXPROT_AUTO BOOLEAN 1
+set_parameter_property AXI_AXPROT_AUTO DISPLAY_NAME "ARPROT/AWPROT Automatically Set"
+set_parameter_property AXI_AXPROT_AUTO HDL_PARAMETER false
+set_parameter_property AXI_AXPROT_AUTO GROUP $group
+
+add_parameter AXI_AXCACHE_MANUAL STD_LOGIC_VECTOR
+set_parameter_property AXI_AXCACHE_MANUAL WIDTH 4
+set_parameter_property AXI_AXCACHE_MANUAL DISPLAY_NAME "ARCACHE/AWCACHE"
+set_parameter_property AXI_AXCACHE_MANUAL HDL_PARAMETER false
+set_parameter_property AXI_AXCACHE_MANUAL ALLOWED_RANGES {0x0:0xF}
+set_parameter_property AXI_AXCACHE_MANUAL GROUP $group
+
+add_parameter AXI_AXPROT_MANUAL STD_LOGIC_VECTOR
+set_parameter_property AXI_AXPROT_MANUAL WIDTH 3
+set_parameter_property AXI_AXPROT_MANUAL DISPLAY_NAME "ARPROT/AWPROT"
+set_parameter_property AXI_AXPROT_MANUAL HDL_PARAMETER false
+set_parameter_property AXI_AXPROT_MANUAL ALLOWED_RANGES {0x0:0x7}
+set_parameter_property AXI_AXPROT_MANUAL GROUP $group
+
+add_parameter AXI_AXCACHE STD_LOGIC_VECTOR
+set_parameter_property AXI_AXCACHE WIDTH 4
+set_parameter_property AXI_AXCACHE DISPLAY_NAME "ARCACHE/AWCACHE"
+set_parameter_property AXI_AXCACHE HDL_PARAMETER true
+set_parameter_property AXI_AXCACHE ALLOWED_RANGES {0x0:0xF}
+set_parameter_property AXI_AXCACHE DERIVED true
+set_parameter_property AXI_AXCACHE GROUP $group
+
+add_parameter AXI_AXPROT STD_LOGIC_VECTOR
+set_parameter_property AXI_AXPROT WIDTH 3
+set_parameter_property AXI_AXPROT DISPLAY_NAME "ARPROT/AWPROT"
+set_parameter_property AXI_AXPROT HDL_PARAMETER true
+set_parameter_property AXI_AXPROT ALLOWED_RANGES {0x0:0x7}
+set_parameter_property AXI_AXPROT DERIVED true
+set_parameter_property AXI_AXPROT GROUP $group
+
 foreach {suffix group} { \
     "SRC" "Source" \
     "DEST" "Destination" \
@@ -121,8 +166,33 @@ foreach {suffix group} { \
   set_parameter_property AXI_SLICE_$suffix GROUP $group
 }
 
+add_parameter AXIS_TUSER_SYNC INTEGER 1
+set_parameter_property AXIS_TUSER_SYNC DISPLAY_NAME "TUSER Synchronization"
+set_parameter_property AXIS_TUSER_SYNC DESCRIPTION "Transfer Start Synchronization on TUSER"
+set_parameter_property AXIS_TUSER_SYNC DISPLAY_HINT boolean
+set_parameter_property AXIS_TUSER_SYNC HDL_PARAMETER true
+set_parameter_property AXIS_TUSER_SYNC GROUP "Source"
+
 # FIFO interface
 set_parameter_property DMA_TYPE_SRC DEFAULT_VALUE 2
+
+add_display_item "Endpoint Configuration" "Scatter-Gather" "group"
+
+# Scatter-Gather interface
+add_parameter DMA_AXI_PROTOCOL_SG INTEGER 1
+set_parameter_property DMA_AXI_PROTOCOL_SG DISPLAY_NAME "AXI Protocol"
+set_parameter_property DMA_AXI_PROTOCOL_SG HDL_PARAMETER true
+set_parameter_property DMA_AXI_PROTOCOL_SG ALLOWED_RANGES { "0:AXI4" "1:AXI3" }
+set_parameter_property DMA_AXI_PROTOCOL_SG VISIBLE true
+set_parameter_property DMA_AXI_PROTOCOL_SG GROUP "Scatter-Gather"
+
+add_parameter DMA_DATA_WIDTH_SG INTEGER 64
+set_parameter_property DMA_DATA_WIDTH_SG DISPLAY_NAME "Bus Width"
+set_parameter_property DMA_DATA_WIDTH_SG UNITS Bits
+set_parameter_property DMA_DATA_WIDTH_SG HDL_PARAMETER true
+set_parameter_property DMA_DATA_WIDTH_SG ALLOWED_RANGES {64}
+set_parameter_property DMA_DATA_WIDTH_SG VISIBLE true
+set_parameter_property DMA_DATA_WIDTH_SG GROUP "Scatter-Gather"
 
 set group "Features"
 
@@ -131,6 +201,12 @@ set_parameter_property CYCLIC DISPLAY_NAME "Cyclic Transfer Support"
 set_parameter_property CYCLIC DISPLAY_HINT boolean
 set_parameter_property CYCLIC HDL_PARAMETER true
 set_parameter_property CYCLIC GROUP $group
+
+add_parameter DMA_SG_TRANSFER INTEGER 0
+set_parameter_property DMA_SG_TRANSFER DISPLAY_NAME "SG Transfer Support"
+set_parameter_property DMA_SG_TRANSFER DISPLAY_HINT boolean
+set_parameter_property DMA_SG_TRANSFER HDL_PARAMETER true
+set_parameter_property DMA_SG_TRANSFER GROUP $group
 
 add_parameter DMA_2D_TRANSFER INTEGER 0
 set_parameter_property DMA_2D_TRANSFER DISPLAY_NAME "2D Transfer Support"
@@ -144,6 +220,13 @@ set_parameter_property SYNC_TRANSFER_START DISPLAY_HINT boolean
 set_parameter_property SYNC_TRANSFER_START HDL_PARAMETER true
 set_parameter_property SYNC_TRANSFER_START GROUP $group
 
+add_parameter CACHE_COHERENT BOOLEAN 0
+set_parameter_property CACHE_COHERENT DISPLAY_NAME "Cache Coherent"
+set_parameter_property CACHE_COHERENT DESCRIPTION "Assume DMA ports ensure cache coherence"
+set_parameter_property CACHE_COHERENT DISPLAY_HINT boolean
+set_parameter_property CACHE_COHERENT HDL_PARAMETER true
+set_parameter_property CACHE_COHERENT GROUP $group
+
 set group "Clock Domain Configuration"
 
 add_parameter AUTO_ASYNC_CLK BOOLEAN 1
@@ -155,6 +238,9 @@ foreach {p name} { \
     ASYNC_CLK_REQ_SRC "Request and Source" \
     ASYNC_CLK_SRC_DEST "Source and Destination" \
     ASYNC_CLK_DEST_REQ "Destination and Request" \
+    ASYNC_CLK_REQ_SG "Request and Scatter-Gather" \
+    ASYNC_CLK_SRC_SG "Source and Scatter-Gather" \
+    ASYNC_CLK_DEST_SG "Destination and Scatter-Gather" \
   } {
 
   add_parameter ${p}_MANUAL INTEGER 1
@@ -199,6 +285,12 @@ foreach domain [list {*}$src_clks {*}$dest_clks] {
   set_parameter_property $p GROUP $group
 }
 
+add_parameter CLK_DOMAIN_SG INTEGER
+set_parameter_property CLK_DOMAIN_SG HDL_PARAMETER false
+set_parameter_property CLK_DOMAIN_SG SYSTEM_INFO {CLOCK_DOMAIN m_sg_axi_clock}
+set_parameter_property CLK_DOMAIN_SG VISIBLE false
+set_parameter_property CLK_DOMAIN_SG GROUP $group
+
 # axi4 slave
 
 ad_ip_intf_s_axi s_axi_aclk s_axi_aresetn 11
@@ -219,6 +311,7 @@ proc axi_dmac_validate {} {
   set auto_clk [get_parameter_value AUTO_ASYNC_CLK]
   set type_src [get_parameter_value DMA_TYPE_SRC]
   set type_dest [get_parameter_value DMA_TYPE_DEST]
+  set sync_start [get_parameter_value SYNC_TRANSFER_START]
 
   set max_burst 32768
 
@@ -228,6 +321,7 @@ proc axi_dmac_validate {} {
     set req_domain [get_parameter_value CLK_DOMAIN_REQ]
     set src_domain [get_parameter_value [lindex $src_clks $type_src 0]]
     set dest_domain [get_parameter_value [lindex $dest_clks $type_dest 0]]
+    set sg_domain [get_parameter_value CLK_DOMAIN_SG]
 
     if {$req_domain != 0 && $req_domain == $src_domain} {
       set_parameter_value ASYNC_CLK_REQ_SRC 0
@@ -246,13 +340,31 @@ proc axi_dmac_validate {} {
     } else {
       set_parameter_value ASYNC_CLK_DEST_REQ 1
     }
+
+    if {$sg_domain != 0 && $sg_domain == $req_domain} {
+      set_parameter_value ASYNC_CLK_REQ_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_REQ_SG 1
+    }
+
+    if {$sg_domain != 0 && $sg_domain == $src_domain} {
+      set_parameter_value ASYNC_CLK_SRC_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_SRC_SG 1
+    }
+
+    if {$sg_domain != 0 && $sg_domain == $dest_domain} {
+      set_parameter_value ASYNC_CLK_DEST_SG 0
+    } else {
+      set_parameter_value ASYNC_CLK_DEST_SG 1
+    }
   } else {
-    foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ} {
+    foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ ASYNC_CLK_REQ_SG ASYNC_CLK_SRC_SG ASYNC_CLK_DEST_SG} {
       set_parameter_value $p [get_parameter_value ${p}_MANUAL]
     }
   }
 
-  foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ} {
+  foreach p {ASYNC_CLK_REQ_SRC ASYNC_CLK_SRC_DEST ASYNC_CLK_DEST_REQ ASYNC_CLK_REQ_SG ASYNC_CLK_SRC_SG ASYNC_CLK_DEST_SG} {
     set_parameter_property ${p}_MANUAL VISIBLE [expr $auto_clk ? false : true]
     set_parameter_property $p VISIBLE $auto_clk
   }
@@ -273,6 +385,29 @@ proc axi_dmac_validate {} {
   }
 
   set_parameter_property MAX_BYTES_PER_BURST ALLOWED_RANGES "1:$max_burst"
+
+  set_parameter_property AXIS_TUSER_SYNC ENABLED [expr {$type_src == 1 && $sync_start == 1} ? true : false]
+  set_parameter_property AXIS_TUSER_SYNC VISIBLE [expr {$type_src == 1} ? true : false]
+
+  set cache_coherent [get_parameter_value CACHE_COHERENT]
+  set axcache_auto [get_parameter_value AXI_AXCACHE_AUTO]
+  set axprot_auto [get_parameter_value AXI_AXPROT_AUTO]
+  set axcache_manual [get_parameter_value AXI_AXCACHE_MANUAL]
+  set axprot_manual [get_parameter_value AXI_AXPROT_MANUAL]
+  set axcache_default [expr {$cache_coherent == true} ? 0xF : 0x3]
+  set axprot_default [expr {$cache_coherent == true} ? 0x2 : 0x0]
+
+  set_parameter_property AXI_AXCACHE_AUTO ENABLED $cache_coherent
+  set_parameter_property AXI_AXPROT_AUTO ENABLED $cache_coherent
+  set_parameter_property AXI_AXCACHE_MANUAL ENABLED $cache_coherent
+  set_parameter_property AXI_AXPROT_MANUAL ENABLED $cache_coherent
+  set_parameter_property AXI_AXCACHE_MANUAL VISIBLE [expr {$cache_coherent == true} ? [expr {$axcache_auto == true} ? false : true] : false]
+  set_parameter_property AXI_AXPROT_MANUAL VISIBLE [expr {$cache_coherent == true} ? [expr {$axprot_auto == true} ? false : true] : false]
+  set_parameter_property AXI_AXCACHE VISIBLE [expr {$cache_coherent == true} ? $axcache_auto : true]
+  set_parameter_property AXI_AXPROT VISIBLE [expr {$cache_coherent == true} ? $axprot_auto : true]
+
+  set_parameter_value AXI_AXCACHE [expr {$cache_coherent == true} ? [expr {$axcache_auto == true} ? $axcache_default : $axcache_manual] : $axcache_default]
+  set_parameter_value AXI_AXPROT [expr {$cache_coherent == true} ? [expr {$axprot_auto == true} ? $axprot_default : $axprot_manual]  : $axprot_default]
 }
 
 # conditional interfaces
@@ -293,6 +428,15 @@ add_interface_port m_src_axi_clock m_src_axi_aclk clk Input 1
 add_interface m_src_axi_reset reset end
 set_interface_property m_src_axi_reset associatedClock m_src_axi_clock
 add_interface_port m_src_axi_reset m_src_axi_aresetn reset_n Input 1
+
+# axi4 scatter-gather
+
+add_interface m_sg_axi_clock clock end
+add_interface_port m_sg_axi_clock m_sg_axi_aclk clk Input 1
+
+add_interface m_sg_axi_reset reset end
+set_interface_property m_sg_axi_reset associatedClock m_sg_axi_clock
+add_interface_port m_sg_axi_reset m_sg_axi_aresetn reset_n Input 1
 
 # axis destination/source
 
@@ -341,8 +485,9 @@ ad_interface clock   fifo_wr_clk       input   1                       clk
 ad_interface signal  fifo_wr_en        input   1                       valid
 ad_interface signal  fifo_wr_din       input   DMA_DATA_WIDTH_SRC      data
 ad_interface signal  fifo_wr_overflow  output  1                       ovf
-ad_interface signal  fifo_wr_sync      input   1                       sync
 ad_interface signal  fifo_wr_xfer_req  output  1                       xfer_req
+
+ad_interface signal  sync              input   1                       sync
 
 proc add_axi_master_interface {axi_type port suffix} {
   add_interface $port $axi_type start
@@ -406,7 +551,7 @@ proc axi_dmac_elaborate {} {
   set disabled_intfs {}
 
   # add axi3 or axi4 interface depending on user selection
-  foreach {suffix port} {SRC m_src_axi DEST m_dest_axi} {
+  foreach {suffix port} {SRC m_src_axi DEST m_dest_axi SG m_sg_axi} {
     if {[get_parameter_value DMA_AXI_PROTOCOL_${suffix}] == 0} {
       set axi_type axi4
     } else {
@@ -429,6 +574,13 @@ proc axi_dmac_elaborate {} {
     set_interface_property m_src_axi combinedIssuingCapability $fifo_size
   } else {
     lappend disabled_intfs m_src_axi_clock m_src_axi_reset m_src_axi
+  }
+
+  if {[get_parameter_value DMA_SG_TRANSFER] == 1} {
+    set_interface_property m_sg_axi readIssuingCapability $fifo_size
+    set_interface_property m_sg_axi combinedIssuingCapability $fifo_size
+  } else {
+    lappend disabled_intfs m_sg_axi_clock m_sg_axi_reset m_sg_axi
   }
 
   # axis destination/source
@@ -492,19 +644,19 @@ proc axi_dmac_elaborate {} {
   if {[get_parameter_value DMA_TYPE_DEST] != 2} {
     lappend disabled_intfs \
       if_fifo_rd_clk if_fifo_rd_en if_fifo_rd_valid if_fifo_rd_dout \
-	  if_fifo_rd_underflow if_fifo_rd_xfer_req
+      if_fifo_rd_underflow if_fifo_rd_xfer_req
   }
 
   if {[get_parameter_value DMA_TYPE_SRC] != 2} {
     lappend disabled_intfs \
       if_fifo_wr_clk if_fifo_wr_en if_fifo_wr_din if_fifo_wr_overflow \
-      if_fifo_wr_sync if_fifo_wr_xfer_req
+      if_fifo_wr_xfer_req
   }
 
-  if {[get_parameter_value DMA_TYPE_SRC] == 2 &&
-      [get_parameter_value SYNC_TRANSFER_START] == 0} {
-    set_port_property fifo_wr_sync termination true
-    set_port_property fifo_wr_sync termination_value 1
+  if {[get_parameter_value SYNC_TRANSFER_START] == 0 || \
+     ([get_parameter_value DMA_TYPE_SRC] == 1 && \
+      [get_parameter_value AXIS_TUSER_SYNC] == 1)} {
+    lappend disabled_intfs if_sync
   }
 
   if {[get_parameter_value ENABLE_DIAGNOSTICS_IF] != 1} {

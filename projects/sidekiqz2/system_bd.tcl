@@ -1,5 +1,9 @@
-# create board design
+###############################################################################
+## Copyright (C) 2018-2023 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
+# create board design
 source ../pluto/system_bd.tcl
 
 ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 19
@@ -7,4 +11,3 @@ ad_ip_parameter sys_ps7 CONFIG.PCW_GPIO_EMIO_GPIO_IO 19
 set_property LEFT 18 [get_bd_ports /gpio_i]
 set_property LEFT 18 [get_bd_ports /gpio_o]
 set_property LEFT 18 [get_bd_ports /gpio_t]
-

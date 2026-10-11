@@ -26,7 +26,7 @@
 //
 //   2. An ADI specific BSD license, which can be found in the top level directory
 //      of this repository (LICENSE_ADIBSD), and also on-line at:
-//      https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_ADIBSD
+//      https://github.com/analogdevicesinc/hdl/blob/main/LICENSE_ADIBSD
 //      This will allow to generate bit files and not release the source code,
 //      as long as it attaches to an ADI device.
 //
@@ -38,13 +38,17 @@
 module axi_adrv9001_core #(
   parameter ID = 0,
   parameter CMOS_LVDS_N = 0,
-  parameter USE_RX_CLK_FOR_TX = 0,
+  parameter USE_RX1_CLK_FOR_TX = 0,
+  parameter USE_RX2_CLK_FOR_TX = 0,
+  parameter USE_RX_CLK_FOR_TX1 = 0,
+  parameter USE_RX_CLK_FOR_TX2 = 0,
   parameter NUM_LANES = 3,
   parameter DRP_WIDTH = 5,
   parameter TDD_DISABLE = 0,
   parameter DDS_DISABLE = 0,
   parameter INDEPENDENT_1R1T_SUPPORT = 1,
   parameter COMMON_2R2T_SUPPORT = 1,
+  parameter DISABLE_RX1_SSI = 0,
   parameter DISABLE_RX2_SSI = 0,
   parameter DISABLE_TX2_SSI = 0,
   parameter FPGA_TECHNOLOGY = 0,
@@ -221,6 +225,7 @@ module axi_adrv9001_core #(
   wire           adc_sync_m;
   wire           dac_sync_m;
   wire           dac_sync_out_1;
+  wire           dac_sync_out_2;
 
   reg            tx1_data_valid_A_d;
   reg    [15:0]  tx1_data_i_A_d;
@@ -380,6 +385,7 @@ module axi_adrv9001_core #(
     .ID (ID),
     .ENABLED (1),
     .CMOS_LVDS_N (CMOS_LVDS_N),
+    .USE_RX_CLK_FOR_TX (USE_RX1_CLK_FOR_TX),
     .COMMON_BASE_ADDR(6'h00),
     .CHANNEL_BASE_ADDR(6'h01),
     .MODE_R1 (COMMON_2R2T_SUPPORT == 0 || DISABLE_RX2_SSI == 1),
@@ -445,6 +451,7 @@ module axi_adrv9001_core #(
     .ID (ID),
     .ENABLED (INDEPENDENT_1R1T_SUPPORT == 1 && DISABLE_RX2_SSI != 1),
     .CMOS_LVDS_N (CMOS_LVDS_N),
+    .USE_RX_CLK_FOR_TX (USE_RX2_CLK_FOR_TX),
     .COMMON_BASE_ADDR(6'h04),
     .CHANNEL_BASE_ADDR(6'h05),
     .MODE_R1 (1),
@@ -503,7 +510,7 @@ module axi_adrv9001_core #(
     .ID (ID),
     .ENABLED (1),
     .CMOS_LVDS_N (CMOS_LVDS_N),
-    .USE_RX_CLK_FOR_TX (USE_RX_CLK_FOR_TX),
+    .USE_RX_CLK_FOR_TX (USE_RX_CLK_FOR_TX1),
     .COMMON_BASE_ADDR ('h08),
     .CHANNEL_BASE_ADDR ('h09),
     .MODE_R1 (COMMON_2R2T_SUPPORT == 0 || DISABLE_RX2_SSI == 1),
@@ -533,7 +540,7 @@ module axi_adrv9001_core #(
     .up_dac_r1_mode (up_tx1_r1_mode),
     .tdd_tx_valid (tdd_tx1_valid),
     .dac_clk_ratio (dac_clk_ratio),
-    .dac_sync_in (external_dac_sync | dac_sync_out_1),
+    .dac_sync_in (external_dac_sync | dac_sync_out_1 | dac_sync_out_2),
     .dac_sync_out (dac_sync_out_1),
     .dac_ext_sync_arm (dac_ext_sync_arm),
     .dac_enable_i0 (dac_1_enable_i0),
@@ -561,7 +568,7 @@ module axi_adrv9001_core #(
     .ID (ID),
     .ENABLED (INDEPENDENT_1R1T_SUPPORT == 1 && DISABLE_TX2_SSI != 1),
     .CMOS_LVDS_N (CMOS_LVDS_N),
-    .USE_RX_CLK_FOR_TX (USE_RX_CLK_FOR_TX),
+    .USE_RX_CLK_FOR_TX (USE_RX_CLK_FOR_TX2),
     .COMMON_BASE_ADDR ('h10),
     .CHANNEL_BASE_ADDR ('h11),
     .MODE_R1 (1),
@@ -588,8 +595,8 @@ module axi_adrv9001_core #(
     .dac_sdr_ddr_n (tx2_sdr_ddr_n_loc),
     .dac_symb_op (tx2_symb_op_loc),
     .dac_symb_8_16b (tx2_symb_8_16b_loc),
-    .dac_sync_in (external_dac_sync | dac_sync_out_1),
-    .dac_sync_out (),
+    .dac_sync_in (external_dac_sync | dac_sync_out_1 | dac_sync_out_2),
+    .dac_sync_out (dac_sync_out_2),
     .dac_valid (dac_2_valid),
     .dac_enable_i0 (dac_2_enable_i0),
     .dac_data_i0 (dac_2_data_i0[15:0]),
@@ -617,6 +624,7 @@ module axi_adrv9001_core #(
   up_delay_cntrl #(
     .DATA_WIDTH(NUM_LANES),
     .DRP_WIDTH(DRP_WIDTH),
+    .DISABLE(DISABLE_RX1_SSI),
     .BASE_ADDRESS(6'h02)
   ) i_delay_cntrl_rx1 (
     .delay_clk (delay_clk),

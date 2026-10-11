@@ -1,5 +1,9 @@
-# ip
+###############################################################################
+## Copyright (C) 2017-2023 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
+# ip
 source ../../scripts/adi_env.tcl
 source $ad_hdl_dir/library/scripts/adi_ip_xilinx.tcl
 
@@ -53,7 +57,10 @@ adi_add_bus "spi_engine_offload_ctrl" "slave" \
 		{ "ctrl_enable" "ENABLE"} \
 		{ "ctrl_enabled" "ENABLED"} \
 		{ "ctrl_mem_reset" "MEM_RESET"} \
-	}
+		{ "status_sync_ready" "sync_ready"} \
+		{ "status_sync_valid" "sync_valid"} \
+		{ "status_sync_data" "sync_data"} \
+  }
 
 adi_add_bus_clock "ctrl_clk" "spi_engine_offload_ctrl"
 adi_add_bus_clock "spi_clk" "spi_engine_ctrl" "spi_resetn"

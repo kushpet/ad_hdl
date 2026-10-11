@@ -1,46 +1,7 @@
-#
-# The ADI JESD204 Core is released under the following license, which is
-# different than all other HDL cores in this repository.
-#
-# Please read this, and understand the freedoms and responsibilities you have
-# by using this source code/core.
-#
-# The JESD204 HDL, is copyright © 2016-2017 Analog Devices Inc.
-#
-# This core is free software, you can use run, copy, study, change, ask
-# questions about and improve this core. Distribution of source, or resulting
-# binaries (including those inside an FPGA or ASIC) require you to release the
-# source of the entire project (excluding the system libraries provide by the
-# tools/compiler/FPGA vendor). These are the terms of the GNU General Public
-# License version 2 as published by the Free Software Foundation.
-#
-# This core  is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-# A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License version 2
-# along with this source code, and binary.  If not, see
-# <http://www.gnu.org/licenses/>.
-#
-# Commercial licenses (with commercial support) of this JESD204 core are also
-# available under terms different than the General Public License. (e.g. they
-# do not require you to accompany any image (FPGA or ASIC) using the JESD204
-# core with any corresponding source code.) For these alternate terms you must
-# purchase a license from Analog Devices Technology Licensing Office. Users
-# interested in such a license should contact jesd204-licensing@analog.com for
-# more information. This commercial license is sub-licensable (if you purchase
-# chips from Analog Devices, incorporate them into your PCB level product, and
-# purchase a JESD204 license, end users of your product will also have a
-# license to use this core in a commercial setting without releasing their
-# source code).
-#
-# In addition, we kindly ask you to acknowledge ADI in any program, application
-# or publication in which you use this JESD204 HDL core. (You are not required
-# to do so; it is up to your common sense to decide whether you want to comply
-# with this request or not.) For general publications, we suggest referencing :
-# “The design and implementation of the JESD204 HDL Core used in this project
-# is copyright © 2016-2017, Analog Devices, Inc.”
-#
+###############################################################################
+## Copyright (C) 2017-2022, 2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIJESD204
+###############################################################################
 
 package require qsys 14.0
 
@@ -61,7 +22,10 @@ ad_ip_files jesd204_rx [list \
   jesd204_lane_latency_monitor.v \
   jesd204_rx_cgs.v \
   jesd204_rx_ctrl.v \
+  jesd204_rx_ctrl_64b.v \
   jesd204_rx_lane.v \
+  jesd204_rx_lane_64b.v \
+  jesd204_rx_header.v \
   jesd204_rx_frame_align.v \
   jesd204_rx_constr.sdc \
   ../jesd204_common/jesd204_eof_generator.v \
@@ -79,6 +43,11 @@ ad_ip_files jesd204_rx [list \
 ]
 
 # parameters
+ad_ip_parameter LINK_MODE INTEGER 1 true { \
+  DISPLAY_NAME "Link Layer mode" \
+  ALLOWED_RANGES {"1:8B10B" "2:64B66B"} \
+  HDL_PARAMETER true \
+}
 
 add_parameter NUM_LANES INTEGER 1
 set_parameter_property NUM_LANES DISPLAY_NAME "Number of Lanes"
@@ -98,6 +67,12 @@ set_parameter_property NUM_INPUT_PIPELINE HDL_PARAMETER true
 add_parameter ASYNC_CLK BOOLEAN false
 set_parameter_property ASYNC_CLK DISPLAY_NAME "Link and device clock asynchronous"
 set_parameter_property ASYNC_CLK HDL_PARAMETER true
+
+ad_ip_parameter DATA_PATH_WIDTH INTEGER 4 true { \
+  DISPLAY_NAME "Physical layer datapath widthin" \
+  DISPLAY_UNITS "octets" \
+  ALLOWED_RANGES {4 8} \
+}
 
 ad_ip_parameter TPL_DATA_PATH_WIDTH INTEGER 4 true { \
   DISPLAY_NAME "Transport layer datapath width" \
@@ -249,6 +224,7 @@ set_port_property lmfc_edge TERMINATION TRUE
 proc jesd204_rx_elaboration_callback {} {
   set num_lanes [get_parameter_value "NUM_LANES"]
   set tpl_width [get_parameter_value "TPL_DATA_PATH_WIDTH"]
+  set phy_width [get_parameter_value "DATA_PATH_WIDTH"]
 
   # rx_data interface
 
@@ -263,21 +239,36 @@ proc jesd204_rx_elaboration_callback {} {
 
   for {set i 0 } {$i < $num_lanes} {incr i} {
     add_interface rx_phy${i} conduit end
-#    set_interface_property rx_phy${i} associatedClock clock
-#    set_interface_property rx_phy${i} associatedReset reset
-    add_interface_port rx_phy${i} rx_phy${i}_data char Input 32
+
+    add_interface_port rx_phy${i} rx_phy${i}_data char Input [expr 8*$phy_width]
     set_port_property rx_phy${i}_data fragment_list \
-      [format "phy_data(%d:%d)" [expr 32*$i+31] [expr 32*$i]]
-    add_interface_port rx_phy${i} rx_phy${i}_charisk charisk Input 4
-    set_port_property rx_phy${i}_charisk fragment_list \
-      [format "phy_charisk(%d:%d)" [expr 4*$i+3] [expr 4*$i]]
-    add_interface_port rx_phy${i} rx_phy${i}_disperr disperr Input 4
-    set_port_property rx_phy${i}_disperr fragment_list \
-      [format "phy_disperr(%d:%d)" [expr 4*$i+3] [expr 4*$i]]
-    add_interface_port rx_phy${i} rx_phy${i}_notintable notintable Input 4
-    set_port_property rx_phy${i}_notintable fragment_list \
-      [format "phy_notintable(%d:%d)" [expr 4*$i+3] [expr 4*$i]]
-    add_interface_port rx_phy${i} rx_phy${i}_patternalign_en patternalign_en Output 1
-    set_port_property rx_phy${i}_patternalign_en fragment_list "phy_en_char_align"
+      [format "phy_data(%d:%d)" [expr (8*$phy_width)*($i+1)-1] [expr 8*$phy_width*$i]]
+
+    if {[get_parameter_value "LINK_MODE"]==1} {
+      add_interface_port rx_phy${i} rx_phy${i}_charisk charisk Input $phy_width
+      set_port_property rx_phy${i}_charisk fragment_list \
+        [format "phy_charisk(%d:%d)" [expr $phy_width*($i+1)-1] [expr $phy_width*$i]]
+
+      add_interface_port rx_phy${i} rx_phy${i}_disperr disperr Input $phy_width
+      set_port_property rx_phy${i}_disperr fragment_list \
+        [format "phy_disperr(%d:%d)" [expr $phy_width*($i+1)-1] [expr $phy_width*$i]]
+
+      add_interface_port rx_phy${i} rx_phy${i}_notintable notintable Input $phy_width
+      set_port_property rx_phy${i}_notintable fragment_list \
+        [format "phy_notintable(%d:%d)" [expr $phy_width*($i+1)-1] [expr $phy_width*$i]]
+
+      add_interface_port rx_phy${i} rx_phy${i}_patternalign_en patternalign_en Output 1
+      set_port_property rx_phy${i}_patternalign_en fragment_list "phy_en_char_align"
+    }
+
+    if {[get_parameter_value "LINK_MODE"]==2} {
+      add_interface_port rx_phy${i} rx_phy${i}_header header Input 2
+      set_port_property rx_phy${i}_header fragment_list \
+        [format "phy_header(%d:%d)" [expr 2*($i+1)-1] [expr 2*$i]]
+
+      add_interface_port rx_phy${i} rx_phy${i}_block_sync block_sync Input 1
+      set_port_property rx_phy${i}_block_sync fragment_list \
+        [format "phy_header(%d:%d)" [expr 1*($i+1)-1] [expr 1*$i]]
+    }
   }
 }

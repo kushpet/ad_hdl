@@ -26,7 +26,7 @@
 //
 //   2. An ADI specific BSD license, which can be found in the top level directory
 //      of this repository (LICENSE_ADIBSD), and also on-line at:
-//      https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_ADIBSD
+//      https://github.com/analogdevicesinc/hdl/blob/main/LICENSE_ADIBSD
 //      This will allow to generate bit files and not release the source code,
 //      as long as it attaches to an ADI device.
 //
@@ -106,6 +106,10 @@ module axi_ad5766 #(
   input                                 ctrl_cmd_wr_en,
   input       [15:0]                    ctrl_cmd_wr_data,
 
+  input                                 status_sync_ready,
+  output                                status_sync_valid,
+  output      [ 7:0]                    status_sync_data,
+
   input                                 ctrl_enable,
   output                                ctrl_enabled,
   input                                 ctrl_mem_reset
@@ -164,6 +168,8 @@ module axi_ad5766 #(
   assign sync_ready = 1'b1;
 
   assign sdi_data_ready = 1'b0;
+  assign status_sync_valid = 1'b0;
+  assign status_sync_data = 8'b0;
 
   generate if (ASYNC_SPI_CLK) begin
 
@@ -363,6 +369,10 @@ module axi_ad5766 #(
     .dac_sync (),
     .dac_frame (),
     .dac_clksel (),
+    .dac_custom_wr(),
+    .dac_custom_rd(32'b0),
+    .dac_custom_control(),
+    .dac_status_if_busy(1'b0),
     .dac_par_type (),
     .dac_par_enb (),
     .dac_r1_mode (),

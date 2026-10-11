@@ -1,3 +1,7 @@
+###############################################################################
+## Copyright (C) 2019-2023 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
 # create board design
 # interface ports
@@ -282,8 +286,8 @@ ad_cpu_interconnect 0x44A70000 axi_spi
 ad_cpu_interconnect 0x41400000 sys_mb_debug
 
 ## Peripheral Data Interface runs at the new sys_mb_clk frequency
-ad_ip_parameter axi_cpu_interconnect CONFIG.NUM_CLKS 2
-ad_connect sys_mb_clk axi_cpu_interconnect/aclk1
+ad_ip_parameter axi_dp_interconnect CONFIG.NUM_CLKS 2
+ad_connect sys_mb_clk axi_dp_interconnect/aclk1
 
 # interconnect - memory
 

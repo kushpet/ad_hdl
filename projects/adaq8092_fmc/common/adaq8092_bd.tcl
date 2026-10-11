@@ -1,5 +1,9 @@
-#adaq8092
+###############################################################################
+## Copyright (C) 2022-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
+#adaq8092
 create_bd_port -dir I adc_clk_in_p
 create_bd_port -dir I adc_clk_in_n
 
@@ -25,7 +29,7 @@ ad_ip_instance axi_dmac axi_adaq8092_dma
 ad_ip_parameter axi_adaq8092_dma CONFIG.DMA_TYPE_SRC 2
 ad_ip_parameter axi_adaq8092_dma CONFIG.DMA_TYPE_DEST 0
 ad_ip_parameter axi_adaq8092_dma CONFIG.CYCLIC 0
-ad_ip_parameter axi_adaq8092_dma CONFIG.SYNC_TRANSFER_START 0
+ad_ip_parameter axi_adaq8092_dma CONFIG.SYNC_TRANSFER_START 1
 ad_ip_parameter axi_adaq8092_dma CONFIG.AXI_SLICE_SRC 0
 ad_ip_parameter axi_adaq8092_dma CONFIG.AXI_SLICE_DEST 0
 ad_ip_parameter axi_adaq8092_dma CONFIG.DMA_2D_TRANSFER 0
@@ -59,6 +63,7 @@ ad_connect  axi_adaq8092/adc_data_channel1   axi_adaq8092_cpack/fifo_wr_data_0
 ad_connect  axi_adaq8092/adc_enable_2        axi_adaq8092_cpack/enable_1
 ad_connect  axi_adaq8092/adc_data_channel2   axi_adaq8092_cpack/fifo_wr_data_1
 ad_connect  axi_adaq8092_dma/fifo_wr         axi_adaq8092_cpack/packed_fifo_wr
+ad_connect  axi_adaq8092_dma/sync            axi_adaq8092_cpack/packed_sync
 ad_connect  axi_adaq8092/adc_valid           axi_adaq8092_cpack/fifo_wr_en
 ad_connect  axi_adaq8092/adc_dovf            axi_adaq8092_cpack/fifo_wr_overflow
 ad_connect  axi_adaq8092/adc_clk             axi_adaq8092_cpack/clk

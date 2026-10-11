@@ -1,10 +1,15 @@
-#
+###############################################################################
+## Copyright (C) 2016-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
+
+
 # Parameter description:
 #   [TX/RX/RX_OS]_JESD_M  : Number of converters per link
 #   [TX/RX/RX_OS]_JESD_L  : Number of lanes per link
 #   [TX/RX/RX_OS]_JESD_S  : Number of samples per frame
 #   [TX/RX/RX_OS]_JESD_NP : Number of bits per sample
-#
+
 set MAX_TX_NUM_OF_LANES 4
 set MAX_RX_NUM_OF_LANES 2
 set MAX_RX_OS_NUM_OF_LANES 2
@@ -195,7 +200,6 @@ ad_ip_parameter axi_ad9371_rx_os_dma CONFIG.DMA_DATA_WIDTH_SRC [expr $RX_OS_SAMP
 
 # common cores
 
-
 ad_ip_instance util_adxcvr util_ad9371_xcvr
 ad_ip_parameter util_ad9371_xcvr CONFIG.RX_NUM_OF_LANES [expr $MAX_RX_NUM_OF_LANES+$MAX_RX_OS_NUM_OF_LANES]
 ad_ip_parameter util_ad9371_xcvr CONFIG.TX_NUM_OF_LANES $MAX_TX_NUM_OF_LANES
@@ -331,6 +335,7 @@ ad_connect rx_fir_decimator/active adc_fir_filter_active
 
 ad_connect  axi_ad9371_rx_clkgen/clk_0 axi_ad9371_rx_dma/fifo_wr_clk
 ad_connect  util_ad9371_rx_cpack/packed_fifo_wr axi_ad9371_rx_dma/fifo_wr
+ad_connect  util_ad9371_rx_cpack/packed_sync axi_ad9371_rx_dma/sync
 ad_connect  $sys_dma_resetn axi_ad9371_rx_dma/m_dest_axi_aresetn
 
 # connections (adc-os)
@@ -350,6 +355,7 @@ for {set i 0} {$i < $RX_OS_NUM_OF_CONVERTERS} {incr i} {
 }
 ad_connect  rx_os_ad9371_tpl_core/adc_dovf util_ad9371_rx_os_cpack/fifo_wr_overflow
 ad_connect  util_ad9371_rx_os_cpack/packed_fifo_wr axi_ad9371_rx_os_dma/fifo_wr
+ad_connect  util_ad9371_rx_os_cpack/packed_sync axi_ad9371_rx_os_dma/sync
 
 ad_connect  $sys_dma_resetn axi_ad9371_rx_os_dma/m_dest_axi_aresetn
 

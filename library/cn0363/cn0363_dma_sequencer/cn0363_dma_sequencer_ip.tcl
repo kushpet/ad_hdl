@@ -1,3 +1,7 @@
+###############################################################################
+## Copyright (C) 2015-2024 Analog Devices, Inc. All rights reserved.
+### SPDX short identifier: ADIBSD
+###############################################################################
 
 source ../../../scripts/adi_env.tcl
 source $ad_hdl_dir/library/scripts/adi_ip_xilinx.tcl
@@ -60,7 +64,6 @@ adi_add_bus "dma_wr" "master" \
 	"analog.com:interface:fifo_wr:1.0" \
 	{
 		{"dma_wr_en" "EN"} \
-		{"dma_wr_sync" "SYNC"} \
 		{"dma_wr_data" "DATA"} \
 		{"dma_wr_overflow" "OVERFLOW"} \
 		{"dma_wr_xfer_req" "XFER_REQ"} \

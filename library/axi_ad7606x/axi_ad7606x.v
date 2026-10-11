@@ -1,6 +1,6 @@
 // ***************************************************************************
 // ***************************************************************************
-// Copyright (C) 2023 Analog Devices, Inc. All rights reserved.
+// Copyright (C) 2023-2024 Analog Devices, Inc. All rights reserved.
 //
 // In this HDL repository, there are many different and unique modules, consisting
 // of various HDL (Verilog or VHDL) components. The individual modules are
@@ -26,7 +26,7 @@
 //
 //   2. An ADI specific BSD license, which can be found in the top level directory
 //      of this repository (LICENSE_ADIBSD), and also on-line at:
-//      https://github.com/analogdevicesinc/hdl/blob/master/LICENSE_ADIBSD
+//      https://github.com/analogdevicesinc/hdl/blob/main/LICENSE_ADIBSD
 //      This will allow to generate bit files and not release the source code,
 //      as long as it attaches to an ADI device.
 //
@@ -37,57 +37,53 @@
 
 module axi_ad7606x #(
 
-  parameter       ID = 0,
-  parameter       DEV_CONFIG = 0,
-  parameter       ADC_TO_DMA_N_BITS = 16,
-  parameter       ADC_N_BITS = 16,
-  parameter       ADC_READ_MODE = 0,
-  parameter       EXTERNAL_CLK = 0
+  parameter ID = 0,
+  parameter ADC_TO_DMA_N_BITS = 16,
+  parameter ADC_N_BITS = 16
 ) (
 
   // physical data interface
 
-  output                  rx_cs_n,
-  output      [15:0]      rx_db_o,
-  input       [15:0]      rx_db_i,
-  output                  rx_db_t,
-  output                  rx_rd_n,
-  output                  rx_wr_n,
-  input                   external_clk,
+  output        rx_cs_n,
+  output [15:0] rx_db_o,
+  input  [15:0] rx_db_i,
+  output        rx_db_t,
+  output        rx_rd_n,
+  output        rx_wr_n,
 
   // physical control interface
 
-  input                   rx_busy,
-  input                   first_data,
+  input         rx_busy,
+  input         first_data,
 
   // AXI Slave Memory Map
 
-  input                   s_axi_aclk,
-  input                   s_axi_aresetn,
-  input                   s_axi_awvalid,
-  input       [15:0]      s_axi_awaddr,
-  input       [ 2:0]      s_axi_awprot,
-  output                  s_axi_awready,
-  input                   s_axi_wvalid,
-  input       [31:0]      s_axi_wdata,
-  input       [ 3:0]      s_axi_wstrb,
-  output                  s_axi_wready,
-  output                  s_axi_bvalid,
-  output      [ 1:0]      s_axi_bresp,
-  input                   s_axi_bready,
-  input                   s_axi_arvalid,
-  input       [15:0]      s_axi_araddr,
-  input       [ 2:0]      s_axi_arprot,
-  output                  s_axi_arready,
-  output                  s_axi_rvalid,
-  output      [ 1:0]      s_axi_rresp,
-  output      [31:0]      s_axi_rdata,
-  input                   s_axi_rready,
+  input         s_axi_aclk,
+  input         s_axi_aresetn,
+  input         s_axi_awvalid,
+  input  [15:0] s_axi_awaddr,
+  input  [ 2:0] s_axi_awprot,
+  output        s_axi_awready,
+  input         s_axi_wvalid,
+  input  [31:0] s_axi_wdata,
+  input  [ 3:0] s_axi_wstrb,
+  output        s_axi_wready,
+  output        s_axi_bvalid,
+  output [ 1:0] s_axi_bresp,
+  input         s_axi_bready,
+  input         s_axi_arvalid,
+  input  [15:0] s_axi_araddr,
+  input  [ 2:0] s_axi_arprot,
+  output        s_axi_arready,
+  output        s_axi_rvalid,
+  output [ 1:0] s_axi_rresp,
+  output [31:0] s_axi_rdata,
+  input         s_axi_rready,
 
-  input                   adc_dovf,
-  output                  adc_clk,
+  input         adc_dovf,
+  output        adc_clk,
 
-  output                  adc_valid,
+  output        adc_valid,
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_0,
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_1,
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_2,
@@ -96,83 +92,86 @@ module axi_ad7606x #(
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_5,
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_6,
   output [ADC_TO_DMA_N_BITS-1:0] adc_data_7,
-  output                  adc_enable_0,
-  output                  adc_enable_1,
-  output                  adc_enable_2,
-  output                  adc_enable_3,
-  output                  adc_enable_4,
-  output                  adc_enable_5,
-  output                  adc_enable_6,
-  output                  adc_enable_7,
-  output                  adc_reset
+  output        adc_enable_0,
+  output        adc_enable_1,
+  output        adc_enable_2,
+  output        adc_enable_3,
+  output        adc_enable_4,
+  output        adc_enable_5,
+  output        adc_enable_6,
+  output        adc_enable_7,
+  output        adc_reset
 );
 
-  localparam     [31:0]             RD_RAW_CAP = 32'h2000;
+  localparam [31:0] RD_RAW_CAP = 32'h2000;
+  localparam        AD7606B = 1'b0;
+  localparam        AD7606C_16 = 1'b1;
 
   // internal registers
 
-  reg                               up_wack = 1'b0;
-  reg                               up_rack = 1'b0;
-  reg     [31:0]                    up_rdata = 32'b0;
-  reg     [31:0]                    up_rdata_r;
-  reg                               up_rack_r;
-  reg                               up_wack_r;
+  reg         up_wack = 1'b0;
+  reg         up_rack = 1'b0;
+  reg  [31:0] up_rdata = 32'b0;
+  reg  [31:0] up_rdata_r;
+  reg         up_rack_r;
+  reg         up_wack_r;
 
   // internal signals
 
-  wire    [ADC_N_BITS-1:0]          adc_data_0_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_1_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_2_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_3_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_4_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_5_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_6_s;
-  wire    [ADC_N_BITS-1:0]          adc_data_7_s;
-  wire    [(8*ADC_N_BITS)-1:0]      adc_data_s;
-  wire    [ 7:0]                    adc_status_header[0:7];
-  wire                              adc_status;
-  wire    [15:0]                    adc_crc;
-  wire    [15:0]                    adc_crc_res;
-  wire                              adc_crc_err;
+  wire [ADC_N_BITS-1:0] adc_data_0_s;
+  wire [ADC_N_BITS-1:0] adc_data_1_s;
+  wire [ADC_N_BITS-1:0] adc_data_2_s;
+  wire [ADC_N_BITS-1:0] adc_data_3_s;
+  wire [ADC_N_BITS-1:0] adc_data_4_s;
+  wire [ADC_N_BITS-1:0] adc_data_5_s;
+  wire [ADC_N_BITS-1:0] adc_data_6_s;
+  wire [ADC_N_BITS-1:0] adc_data_7_s;
+  wire [(8*ADC_N_BITS)-1:0] adc_data_s;
+  wire [ 7:0]           adc_status_header[0:7];
+  wire                  adc_status;
+  wire [15:0]           adc_crc;
+  wire [15:0]           adc_crc_res;
+  wire                  adc_crc_err;
+  wire                  adc_mode_en;
+  wire [ 7:0]           adc_custom_control;
 
-  wire                              adc_dfmt_enable_s[0:7];
-  wire                              adc_dfmt_type_s[0:7];
-  wire                              adc_dfmt_se_s[0:7];
+  wire                  adc_dfmt_enable_s[0:7];
+  wire                  adc_dfmt_type_s[0:7];
+  wire                  adc_dfmt_se_s[0:7];
 
-  wire                              adc_clk_s;
-  wire    [ 7:0]                    adc_enable;
-  wire                              adc_reset_s;
+  wire [ 7:0]           adc_enable;
+  wire                  adc_reset_s;
 
-  wire    [(8*ADC_TO_DMA_N_BITS)-1:0]      dma_data;
-  wire                              dma_dvalid;
+  wire [(8*ADC_TO_DMA_N_BITS)-1:0] dma_data;
+  wire                  dma_dvalid;
 
-  wire                              up_clk;
-  wire                              up_rstn;
-  wire                              up_rreq_s;
-  wire    [13:0]                    up_raddr_s;
-  wire                              up_wreq_s;
-  wire    [13:0]                    up_waddr_s;
-  wire    [31:0]                    up_wdata_s;
-  wire    [31:0]                    up_rdata_s[0:8];
-  wire    [8:0]                     up_rack_s;
-  wire    [8:0]                     up_wack_s;
+  wire                  up_clk;
+  wire                  up_rstn;
+  wire                  up_rreq_s;
+  wire [13:0]           up_raddr_s;
+  wire                  up_wreq_s;
+  wire [13:0]           up_waddr_s;
+  wire [31:0]           up_wdata_s;
+  wire [31:0]           up_rdata_s[0:8];
+  wire [8:0]            up_rack_s;
+  wire [8:0]            up_wack_s;
 
-  wire                              up_wack_cntrl_s;
-  wire                              up_rack_cntrl_s;
-  wire    [31:0]                    up_rdata_cntrl_s;
+  wire                  up_wack_cntrl_s;
+  wire                  up_rack_cntrl_s;
+  wire [31:0]           up_rdata_cntrl_s;
 
-  wire    [31:0]                    wr_data_s;
-  wire    [15:0]                    rd_data_s;
-  wire                              rd_valid_s;
-  wire    [31:0]                    adc_config_ctrl_s;
-  wire                              adc_ctrl_status_s;
-  wire                              m_axis_ready_s;
-  wire                              m_axis_valid_s;
-  wire    [15:0]                    m_axis_data_s;
-  wire                              m_axis_xfer_req_s;
+  wire [31:0]           wr_data_s;
+  wire [15:0]           rd_data_s;
+  wire                  rd_valid_s;
+  wire [31:0]           adc_config_ctrl_s;
+  wire                  adc_ctrl_status_s;
+  wire                  m_axis_ready_s;
+  wire                  m_axis_valid_s;
+  wire [15:0]           m_axis_data_s;
+  wire                  m_axis_xfer_req_s;
 
   // defaults
-
+  assign adc_clk = s_axi_aclk;
   assign up_clk = s_axi_aclk;
   assign up_rstn = s_axi_aresetn;
   assign adc_reset = adc_reset_s;
@@ -214,22 +213,12 @@ module axi_ad7606x #(
   end
 
   generate
-    if (EXTERNAL_CLK == 1'b1) begin
-      assign adc_clk_s = external_clk;
-    end else begin
-      assign adc_clk_s = up_clk;
-    end
-  endgenerate
-
-  assign adc_clk = adc_clk_s;
-
-  generate
     genvar i;
     for (i = 0; i < 8; i = i + 1) begin
       up_adc_channel #(
         .CHANNEL_ID(i)
       ) i_up_adc_channel (
-        .adc_clk (adc_clk_s),
+        .adc_clk (up_clk),
         .adc_rst (adc_reset_s),
         .adc_enable (adc_enable[i]),
         .adc_iqcor_enb (),
@@ -286,7 +275,7 @@ module axi_ad7606x #(
         .DATA_WIDTH (ADC_N_BITS),
         .BITS_PER_SAMPLE (ADC_TO_DMA_N_BITS)
       ) i_datafmt (
-        .clk (adc_clk),
+        .clk (up_clk),
         .valid (1'b1),
         .data (adc_data_s[k*ADC_N_BITS+(ADC_N_BITS-1):k*ADC_N_BITS]),
         .valid_out (dma_dvalid),
@@ -298,10 +287,8 @@ module axi_ad7606x #(
   endgenerate
 
   generate
-    if (DEV_CONFIG == 0 || DEV_CONFIG == 1) begin
-      axi_ad7606x_16b_pif #(
-        .ADC_READ_MODE (ADC_READ_MODE)
-      ) i_ad7606_parallel_interface (
+    if (ADC_N_BITS == 16) begin
+      axi_ad7606x_16b_pif i_ad7606_parallel_interface (
         .cs_n (rx_cs_n),
         .db_o (rx_db_o),
         .db_i (rx_db_i),
@@ -331,17 +318,17 @@ module axi_ad7606x #(
         .adc_crc_res (adc_crc_res),
         .adc_crc_err (adc_crc_err),
         .adc_valid (adc_valid),
-        .clk (adc_clk_s),
+        .clk (up_clk),
         .rstn (up_rstn),
         .adc_config_ctrl (adc_config_ctrl_s),
         .adc_ctrl_status (adc_ctrl_status_s),
+        .adc_mode_en (adc_mode_en),
+        .adc_custom_control (adc_custom_control),
         .wr_data (wr_data_s[15:0]),
         .rd_data (rd_data_s),
         .rd_valid (rd_valid_s));
     end else begin
-      axi_ad7606x_18b_pif #(
-        .ADC_READ_MODE (ADC_READ_MODE)
-      ) i_ad7606_parallel_interface (
+      axi_ad7606x_18b_pif i_ad7606_parallel_interface (
         .cs_n (rx_cs_n),
         .db_o (rx_db_o),
         .db_i (rx_db_i),
@@ -371,10 +358,12 @@ module axi_ad7606x #(
         .adc_crc_res (adc_crc_res),
         .adc_crc_err (adc_crc_err),
         .adc_valid (adc_valid),
-        .clk (adc_clk_s),
+        .clk (up_clk),
         .rstn (up_rstn),
         .adc_config_ctrl (adc_config_ctrl_s),
         .adc_ctrl_status (adc_ctrl_status_s),
+        .adc_mode_en (adc_mode_en),
+        .adc_custom_control (adc_custom_control),
         .wr_data (wr_data_s[15:0]),
         .rd_data (rd_data_s),
         .rd_valid (rd_valid_s));
@@ -396,7 +385,7 @@ module axi_ad7606x #(
     .CONFIG (RD_RAW_CAP)
   ) i_up_adc_common (
     .mmcm_rst (),
-    .adc_clk (adc_clk_s),
+    .adc_clk (up_clk),
     .adc_rst (adc_reset_s),
     .adc_r1_mode (),
     .adc_ddr_edgesel (),
@@ -412,8 +401,8 @@ module axi_ad7606x #(
     .adc_ext_sync_disarm (),
     .adc_ext_sync_manual_req (),
     .adc_num_lanes (),
-    .adc_custom_control (),
-    .adc_crc_enable (),
+    .adc_custom_control (adc_custom_control),
+    .adc_crc_enable (adc_mode_en),
     .adc_sdr_ddr_n (),
     .adc_symb_op (),
     .adc_symb_8_16b (),
@@ -430,7 +419,7 @@ module axi_ad7606x #(
     .up_drp_wdata (),
     .up_drp_rdata (),
     .up_drp_ready (),
-    .up_drp_locked (),
+    .up_drp_locked (1'b1),
     .adc_config_wr (wr_data_s),
     .adc_config_ctrl (adc_config_ctrl_s),
     .adc_config_rd ({16'd0, rd_data_s}),
